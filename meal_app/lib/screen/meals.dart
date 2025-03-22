@@ -4,11 +4,11 @@ import 'package:meal_app/widgets/meal_item.dart';
 import 'package:meal_app/screen/meal_details.dart';
 
 class MealsScreen extends StatelessWidget {
-  const MealsScreen(meal, {
+  const MealsScreen({
     super.key,
     required this.meals,
     this.title,
-    required this.onToggleFavorite
+    required this.onToggleFavorite,
   }); // no req coz not necessary to be set
 
   final String? title; // making title optional
