@@ -4,115 +4,132 @@ import 'package:meal_app/models/meal.dart';
 import 'package:meal_app/provider/favorites_provider.dart';
 
 class MealDetailsScreen extends ConsumerWidget {
-  const MealDetailsScreen({
-    super.key,
-    required this.meal,
-    /*required this.onToggleFavorite,*/
-  });
+  const MealDetailsScreen({super.key, required this.meal});
 
   final Meal meal;
-  //final void Function(Meal meal) onToggleFavorite;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final favoriteMeals = ref.watch(favoriteMealsProvider);
+    final isFavorite = favoriteMeals.contains(meal);
     return Scaffold(
       appBar: AppBar(
         title: Text(meal.title),
         actions: [
           IconButton(
             onPressed: () {
-              // onToggleFavorite(meal);
-              ref
+              final wasAdded = ref
                   .read(favoriteMealsProvider.notifier)
                   .toggleMealFavoriteStatus(meal);
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    wasAdded ? 'Meal added as a favorite.' : 'Meal removed.',
+                  ),
+                ),
+              );
             },
-            icon: const Icon(Icons.star),
+            icon: Icon(isFavorite ? Icons.star : Icons.star_border),
           ),
         ],
       ),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Align text to left
           children: [
-            Image.network(
-              meal.imageUrl,
+            // Image Section
+            Container(
               height: 300,
               width: double.infinity,
-              fit: BoxFit.cover,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+                image: DecorationImage(
+                  image: NetworkImage(meal.imageUrl),
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             const SizedBox(height: 14),
 
-            // 🥗 Ingredients Section
-            Center(
+            // Ingredients Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                "Ingredients",
+                'Ingredients',
                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            ...meal.ingredients.map(
-              (ingredient) => Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 4,
-                  horizontal: 16,
-                ),
-                child: Text(
-                  ingredient,
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-            ),
-
             const SizedBox(height: 14),
-
-            // 🍽 Steps Section
-            Center(
-              child: Text(
-                "Steps",
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            ...meal.steps.asMap().entries.map(
-              (entry) => Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 16,
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "${entry.key + 1}. ",
-                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        entry.value,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleMedium!.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
+            _buildCard(
+              context,
+              children: meal.ingredients
+                  .map((ingredient) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          ingredient,
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+                      ))
+                  .toList(),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Steps Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Steps',
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+            _buildCard(
+              context,
+              children: meal.steps
+                  .map((step) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          step,
+                          textAlign: TextAlign.left,
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ))
+                  .toList(),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Helper method to build Card for Ingredients and Steps sections
+  Card _buildCard(BuildContext context, {required List<Widget> children}) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      elevation: 6,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
         ),
       ),
     );

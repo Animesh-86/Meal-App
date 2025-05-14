@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:meal_app/models/meal.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:meal_app/screen/categories.dart';
 import 'package:meal_app/screen/filters.dart';
 import 'package:meal_app/screen/meals.dart';
 import 'package:meal_app/widgets/main_dawer.dart';
-import 'package:meal_app/provider/meals_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meal_app/provider/favorites_provider.dart';
-
-const kInitialFilters = {
-  Filter.glutenFree: false,
-  Filter.lactoseFree: false,
-  Filter.vegetarian: false,
-  Filter.vegan: false,
-};
+import 'package:meal_app/provider/filters_provider.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({super.key});
@@ -26,101 +19,66 @@ class TabsScreen extends ConsumerStatefulWidget {
 
 class _TabsScreenState extends ConsumerState<TabsScreen> {
   int _selectedPageIndex = 0;
-  //final List<Meal> _favoriteMeals = [];
-  Map<Filter, bool> _selectedFilters = kInitialFilters;
 
-  void _showInfoMessage(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  /* void _toggleMealFavoriteStatus(Meal meal) {
-    final isExisting = _favoriteMeals.contains(meal);
-
-    if (isExisting) {
-      setState(() {
-        _favoriteMeals.remove(meal);
-      });
-      _showInfoMessage('Meal is no longer a favorite.');
-    } else {
-      setState(() {
-        _favoriteMeals.add(meal);
-        _showInfoMessage('Marked as a favorite!');
-      });
-    }
-  } */
-
+  // To select the page and dynamically change the body of the screen
   void _selectPage(int index) {
     setState(() {
       _selectedPageIndex = index;
     });
   }
 
-  void _setScreen(String identifier) async {
+  // Method to handle screen navigation from the drawer
+  void _setScreen(String identifier) {
     Navigator.of(context).pop();
     if (identifier == 'filters') {
-      final result = await Navigator.of(context).push<Map<Filter, bool>>(
+      Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (ctx) => FiltersScreen(currentFilters: _selectedFilters),
+          builder: (ctx) => const FiltersScreen(),
         ),
       );
-
-      setState(() {
-        _selectedFilters = result ?? kInitialFilters;
-      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final meals = ref.watch(mealsProvider);
-    final availableMeals =
-        meals.where((meal) {
-          if (_selectedFilters[Filter.glutenFree]! && !meal.isGlutenFree) {
-            return false;
-          }
-          if (_selectedFilters[Filter.lactoseFree]! && !meal.isLactoseFree) {
-            return false;
-          }
-          if (_selectedFilters[Filter.vegetarian]! && !meal.isVegetarian) {
-            return false;
-          }
-          if (_selectedFilters[Filter.vegan]! && !meal.isVegan) {
-            return false;
-          }
-          return true;
-        }).toList();
+    final availableMeals = ref.watch(filteredMealsProvider); // Meals updated dynamically
 
-    Widget activePage = CategoriesScreen(
-      //onToggleFavorite: _toggleMealFavoriteStatus,
-      availableMeals: availableMeals,
-    );
-    var activePageTitle = 'Categories';
+    // Map for managing page selection and titles
+    final pages = [
+      {
+        'page': CategoriesScreen(availableMeals: availableMeals),
+        'title': 'Categories',
+      },
+      {
+        'page': MealsScreen(meals: ref.watch(favoriteMealsProvider)),
+        'title': 'Your Favorites',
+      },
+    ];
 
-    if (_selectedPageIndex == 1) {
-      final favoriteMeals = ref.watch(favoriteMealsProvider);
-      activePage = MealsScreen(
-        meals: _favoriteMeals,
-        onToggleFavorite: _toggleMealFavoriteStatus,
-      );
-      activePageTitle = 'Your Favorites';
-    }
+    // Set active page and title based on the selected index
+    final activePage = pages[_selectedPageIndex]['page'];
+    final activePageTitle = pages[_selectedPageIndex]['title'];
 
     return Scaffold(
-      appBar: AppBar(title: Text(activePageTitle)),
+      appBar: AppBar(
+        title: Text(activePageTitle as String? ?? 'Meal App'),
+      ),
       drawer: MainDrawer(onSelectScreen: _setScreen),
-      body: activePage,
+      body: activePage as Widget,
       bottomNavigationBar: BottomNavigationBar(
         onTap: _selectPage,
         currentIndex: _selectedPageIndex,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurface,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.set_meal),
             label: 'Categories',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Favorites'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.star),
+            label: 'Favorites',
+          ),
         ],
       ),
     );
