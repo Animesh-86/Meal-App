@@ -36,7 +36,7 @@ Use the drawer menu to open the Filters screen and apply dietary filters.
 
 # Installation
 
-1. Clone the repository: git clone https://github.com/your-username/meal-app.git
+1. Clone the repository: git clone https://github.com/Animesh-86/meal-app.git
 
 2. Navigate to the project directory: cd meal-app
 
